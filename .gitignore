@@ -65,7 +65,8 @@ cdk.out/
 __MACOSX/
 .AppleDouble
 .LSOverride
-Icon[]
+Icon[
+]
 
 # Thumbnails
 ._*
@@ -306,3 +307,10 @@ luac.out
 *.i*86
 *.x86_64
 *.hex
+
+###-----------------------------###
+###  Project-Specific Files     ###
+###-----------------------------###
+
+# GitHub setup commands (personal reference)
+github-setup-commands.md
