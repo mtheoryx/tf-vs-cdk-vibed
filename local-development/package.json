@@ -1,0 +1,26 @@
+{
+  "name": "ghost-content-seeder",
+  "version": "1.0.0",
+  "description": "Mass content generation script for Ghost CMS using Faker.js - perfect for N-tier architecture testing",
+  "main": "ghost-content-seeder.js",
+  "scripts": {
+    "seed": "node ghost-content-seeder.js",
+    "seed:small": "NUM_AUTHORS=3 NUM_TAGS=10 NUM_POSTS=20 NUM_PAGES=3 node ghost-content-seeder.js",
+    "seed:large": "NUM_AUTHORS=15 NUM_TAGS=50 NUM_POSTS=500 NUM_PAGES=25 node ghost-content-seeder.js"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "axios": "^1.6.0"
+  },
+  "keywords": [
+    "ghost",
+    "cms",
+    "faker",
+    "seeding",
+    "testing",
+    "n-tier",
+    "architecture"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

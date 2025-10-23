@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # NGINX Reverse Proxy (Public Tier)
+  nginx:
+    image: nginx:alpine
+    container_name: ghost-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - ghost
+    networks:
+      - ghost-network
+    restart: unless-stopped
+
+  # Ghost CMS (Application Tier)
+  ghost:
+    image: ghost:5
+    container_name: ghost-app
+    environment:
+      # Database Configuration
+      database__client: mysql
+      database__connection__host: mysql
+      database__connection__port: 3306
+      database__connection__user: ghost
+      database__connection__password: ghost_password
+      database__connection__database: ghost_db
+      
+      # Ghost Configuration
+      url: http://localhost
+      server__host: 0.0.0.0
+      server__port: 2368
+      
+      # Admin API Configuration
+      admin__url: http://localhost/ghost
+      
+      # Content API Configuration
+      content__url: http://localhost
+      
+      # Development settings
+      NODE_ENV: development
+      
+    volumes:
+      - ghost-content:/var/lib/ghost/content
+      - ghost-images:/var/lib/ghost/content/images
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - ghost-network
+    restart: unless-stopped
+    expose:
+      - "2368"
+
+  # MySQL Database (Database Tier)
+  mysql:
+    image: mysql:8.0
+    container_name: ghost-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: ghost_db
+      MYSQL_USER: ghost
+      MYSQL_PASSWORD: ghost_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - ghost-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "ghost", "-pghost_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache (Optional - for performance)
+  redis:
+    image: redis:7-alpine
+    container_name: ghost-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - ghost-network
+    restart: unless-stopped
+    expose:
+      - "6379"
+
+  # Ghost Content Seeder (Development Tool)
+  seeder:
+    build:
+      context: .
+      dockerfile: Dockerfile.seeder
+    container_name: ghost-seeder
+    environment:
+      GHOST_URL: http://ghost:2368
+      GHOST_ADMIN_API_KEY: ${GHOST_ADMIN_API_KEY:-}
+      NUM_AUTHORS: ${NUM_AUTHORS:-8}
+      NUM_TAGS: ${NUM_TAGS:-25}
+      NUM_POSTS: ${NUM_POSTS:-100}
+      NUM_PAGES: ${NUM_PAGES:-10}
+    depends_on:
+      ghost:
+        condition: service_started
+    networks:
+      - ghost-network
+    profiles:
+      - seeder
+    command: ["node", "ghost-content-seeder.js"]
+
+volumes:
+  ghost-content:
+    driver: local
+  ghost-images:
+    driver: local
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  ghost-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

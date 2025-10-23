@@ -1,0 +1,23 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy seeder script
+COPY ghost-content-seeder.js ./
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S ghost-seeder -u 1001
+
+# Change ownership
+RUN chown -R ghost-seeder:nodejs /app
+USER ghost-seeder
+
+# Default command
+CMD ["node", "ghost-content-seeder.js"]
